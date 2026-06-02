@@ -1,0 +1,796 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.6">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+    p.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Thonburi}
+    span.s1 {font: 12.0px Thonburi}
+    span.s2 {font: 12.0px Helvetica}
+    span.s3 {font: 12.0px 'Hiragino Sans'}
+    span.s4 {font: 12.0px 'Lucida Grande'}
+    span.s5 {font: 12.0px 'Zapf Dingbats'}
+    span.s6 {font: 12.0px 'Apple Color Emoji'}
+  </style>
+</head>
+<body>
+<p class="p1">import { useState, useEffect, useCallback } from "react";</p>
+<p class="p2"><br></p>
+<p class="p1">const USERS = [</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:"admin",username:"admin",password:"admin1234",displayName:"<span class="s1">ผู้ดูแลระบบ</span> (Admin)",role:"admin"},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:"store",username:"store",password:"store1234",displayName:"<span class="s1">พนักงานคลังสินค้า</span>",role:"store"},</p>
+<p class="p1">];</p>
+<p class="p3"><span class="s2">const TABS = ["</span>หน้าหลัก<span class="s2">","</span>ค้นหารายการ<span class="s2">","</span>รับสินค้า<span class="s2">","</span>เบิกสินค้า<span class="s2">","</span>รายงาน<span class="s2">"];</span></p>
+<p class="p3"><span class="s2">const DEPARTMENTS = ["</span>ฝ่ายบัญชี<span class="s2">","</span>ฝ่ายช่างยนต์<span class="s2">","</span>ฝ่ายช่างเชื่อม<span class="s2">","</span>ฝ่ายช่างไฟ<span class="s2">","</span>ฝ่ายพนักงานทั่วไป<span class="s2">","</span>ฝ่ายพลขับ<span class="s2">","</span>อื่นๆ<span class="s2">"];</span></p>
+<p class="p3"><span class="s2">const SOURCE_TYPES = ["</span>ร้านค้าทั่วไป<span class="s2">","</span>ห้างสรรพสินค้า<span class="s2">","</span>ตลาด<span class="s2">","</span>สั่งออนไลน์<span class="s2">","</span>อื่นๆ<span class="s2">"];</span></p>
+<p class="p1">const MAX_ATTACH = 3;</p>
+<p class="p2"><br></p>
+<p class="p1">const initProducts = [</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:1,code:"P001",name:"<span class="s1">กระดาษ</span> A4",unit:"<span class="s1">รีม</span>",qty:45,minQty:20,maxQty:200,image:null},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:2,code:"P002",name:"<span class="s1">ปากกาลูกลื่น</span>",unit:"<span class="s1">แท่ง</span>",qty:12,minQty:50,maxQty:500,image:null},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:3,code:"P003",name:"<span class="s1">แฟ้มเอกสาร</span>",unit:"<span class="s1">อัน</span>",qty:80,minQty:30,maxQty:300,image:null},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:4,code:"P004",name:"<span class="s1">หมึกพิมพ์ดำ</span>",unit:"<span class="s1">ตลับ</span>",qty:5,minQty:10,maxQty:50,image:null},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:5,code:"P005",name:"<span class="s1">กรรไกร</span>",unit:"<span class="s1">อัน</span>",qty:25,minQty:10,maxQty:100,image:null},</p>
+<p class="p1">];</p>
+<p class="p2"><br></p>
+<p class="p1">const fmt = n =&gt; Number(n||0).toLocaleString("th-TH");</p>
+<p class="p1">const todayStr = () =&gt; new Date().toISOString().slice(0,10);</p>
+<p class="p1">const nowTime = () =&gt; new Date().toTimeString().slice(0,5);</p>
+<p class="p1">const s = (x={}) =&gt; ({width:"100%",padding:"7px 10px",border:"1px solid #cbd5e0",borderRadius:6,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",...x});</p>
+<p class="p1">const b = (bg,color,x={}) =&gt; ({background:bg,color,border:"none",borderRadius:6,padding:"7px 14px",cursor:"pointer",fontSize:13,fontFamily:"inherit",fontWeight:600,...x});</p>
+<p class="p1">const Card = ({children,style={}}) =&gt; &lt;div style={{background:"#fff",borderRadius:10,padding:14,boxShadow:"0 1px 4px rgba(0,0,0,.08)",...style}}&gt;{children}&lt;/div&gt;;</p>
+<p class="p1">const Lbl = ({children,c}) =&gt; &lt;div style={{fontSize:11,color:c||"#666",marginBottom:2}}&gt;{children}&lt;/div&gt;;</p>
+<p class="p1">const readImg = f =&gt; new Promise(res=&gt;{const r=new FileReader();r.onload=e=&gt;res(e.target.result);r.readAsDataURL(f);});</p>
+<p class="p2"><br></p>
+<p class="p1">// ===== IMAGE VIEWER MODAL =====</p>
+<p class="p1">function ImageViewer({images, startIdx=0, onClose}) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [idx,setIdx] = useState(startIdx);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>useEffect(()=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const fn = e =&gt; { if(e.key==="Escape") onClose(); if(e.key==="ArrowRight") setIdx(i=&gt;Math.min(i+1,images.length-1)); if(e.key==="ArrowLeft") setIdx(i=&gt;Math.max(i-1,0)); };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>window.addEventListener("keydown",fn); return ()=&gt;window.removeEventListener("keydown",fn);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>},[images,onClose]);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:500}} onClick={onClose}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div onClick={e=&gt;e.stopPropagation()} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12,maxWidth:"90vw"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;img src={images[idx]} style={{maxWidth:"80vw",maxHeight:"70vh",borderRadius:10,boxShadow:"0 8px 32px rgba(0,0,0,.5)",objectFit:"contain"}} alt="view"/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{display:"flex",alignItems:"center",gap:16}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;button onClick={()=&gt;setIdx(i=&gt;Math.max(i-1,0))} disabled={idx===0} style={{...b("#fff","#333",{padding:"6px 16px",opacity:idx===0?.3:1})}}&gt;<span class="s3">◀</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;span style={{color:"#fff",fontSize:13}}&gt;{idx+1} / {images.length}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;button onClick={()=&gt;setIdx(i=&gt;Math.min(i+1,images.length-1))} disabled={idx===images.length-1} style={{...b("#fff","#333",{padding:"6px 16px",opacity:idx===images.length-1?.3:1})}}&gt;<span class="s4">▶</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{display:"flex",gap:6}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{images.map((img,i)=&gt;&lt;img key={i} src={img} onClick={()=&gt;setIdx(i)} style={{width:48,height:48,objectFit:"cover",borderRadius:6,border:i===idx?"3px solid #63b3ed":"2px solid transparent",cursor:"pointer",opacity:i===idx?1:.6}} alt="thumb"/&gt;)}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button onClick={onClose} style={b("#e53e3e","#fff",{marginTop:4})}&gt;<span class="s5">✕</span> <span class="s1">ปิด</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ===== ATTACH IMAGES =====</p>
+<p class="p1">function AttachImages({images=[], onChange}) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const handleAdd = async e =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const files = Array.from(e.target.files);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const rem = MAX_ATTACH - images.length;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const datas = await Promise.all(files.slice(0,rem).map(f=&gt;readImg(f)));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>onChange([...images,...datas].slice(0,MAX_ATTACH));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>e.target.value="";</p>
+<p class="p1"><span class="Apple-converted-space">  </span>};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const remove = i =&gt; onChange(images.filter((_,j)=&gt;j!==i));</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;Lbl c="#555"&gt;<span class="s6">📎</span> <span class="s1">แนบรูปภาพ</span> (<span class="s1">สูงสุด</span> {MAX_ATTACH} <span class="s1">รูป</span>) {images.length&gt;0&amp;&amp;`— <span class="s1">แนบแล้ว</span> ${images.length} <span class="s1">รูป</span>`}&lt;/Lbl&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{images.length&lt;MAX_ATTACH&amp;&amp;&lt;input type="file" accept="image/*" multiple onChange={handleAdd} style={{fontSize:12,marginBottom:6}}/&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{images.length&gt;0&amp;&amp;(</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:4}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{images.map((img,i)=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div key={i} style={{position:"relative"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;img src={img} style={{width:68,height:68,objectFit:"cover",borderRadius:7,border:"1px solid #cbd5e0",cursor:"pointer"}} alt={`a${i}`}/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;button onClick={()=&gt;remove(i)} style={{position:"absolute",top:-6,right:-6,background:"#e53e3e",color:"#fff",border:"none",borderRadius:"50%",width:18,height:18,fontSize:10,cursor:"pointer",lineHeight:"18px",textAlign:"center",padding:0}}&gt;<span class="s5">✕</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ===== THUMBNAIL ROW (clickable) =====</p>
+<p class="p1">function ThumbRow({images=[], onView}) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(!images.length) return null;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:4}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{images.map((img,i)=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;img key={i} src={img} onClick={()=&gt;onView(i)} style={{width:44,height:44,objectFit:"cover",borderRadius:5,border:"1px solid #cbd5e0",cursor:"pointer"}} alt={`t${i}`}/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ===== LOGIN =====</p>
+<p class="p1">function LoginScreen({onLogin}) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [u,setU]=useState(""); const [p,setP]=useState(""); const [show,setShow]=useState(false); const [err,setErr]=useState("");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const go=()=&gt;{const user=USERS.find(x=&gt;x.username===u&amp;&amp;x.password===p);user?onLogin(user):setErr("<span class="s1">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</span>");};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div style={{minHeight:"100vh",background:"linear-gradient(135deg,#1e3a5f,#2d6a9f)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Sarabun',sans-serif"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style={{background:"#fff",borderRadius:16,padding:"36px 32px",width:"100%",maxWidth:380,boxShadow:"0 20px 60px rgba(0,0,0,.3)"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{textAlign:"center",marginBottom:28}}&gt;&lt;div style={{fontSize:48}}&gt;<span class="s6">📦</span>&lt;/div&gt;&lt;div style={{fontWeight:700,fontSize:20,color:"#1e3a5f"}}&gt;<span class="s1">ระบบจัดการสต็อกสินค้า</span>&lt;/div&gt;&lt;div style={{color:"#888",fontSize:13,marginTop:4}}&gt;<span class="s1">กรุณาเข้าสู่ระบบ</span>&lt;/div&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{err&amp;&amp;&lt;div style={{background:"#fff5f5",border:"1px solid #fc8181",borderRadius:8,padding:"8px 12px",marginBottom:14,color:"#c53030",fontSize:13}}&gt;<span class="s6">❌</span> {err}&lt;/div&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{marginBottom:14}}&gt;&lt;Lbl&gt;<span class="s1">ชื่อผู้ใช้</span>&lt;/Lbl&gt;&lt;input value={u} onChange={e=&gt;{setU(e.target.value);setErr("");}} onKeyDown={e=&gt;e.key==="Enter"&amp;&amp;go()} placeholder="<span class="s1">กรอกชื่อผู้ใช้</span>" style={s({fontSize:14,padding:"10px 12px"})}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{marginBottom:20}}&gt;&lt;Lbl&gt;<span class="s1">รหัสผ่าน</span>&lt;/Lbl&gt;&lt;div style={{position:"relative"}}&gt;&lt;input type={show?"text":"password"} value={p} onChange={e=&gt;{setP(e.target.value);setErr("");}} onKeyDown={e=&gt;e.key==="Enter"&amp;&amp;go()} placeholder="<span class="s1">กรอกรหัสผ่าน</span>" style={s({fontSize:14,padding:"10px 40px 10px 12px"})}/&gt;&lt;button onClick={()=&gt;setShow(v=&gt;!v)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16}}&gt;{show?"<span class="s6">🙈</span>":"<span class="s6">👁️</span>"}&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button onClick={go} style={b("#1e3a5f","#fff",{width:"100%",padding:"11px",fontSize:15})}&gt;<span class="s6">🔐</span> <span class="s1">เข้าสู่ระบบ</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{marginTop:20,padding:14,background:"#f7fafc",borderRadius:8,fontSize:12,color:"#666"}}&gt;&lt;div style={{fontWeight:600,marginBottom:6,color:"#4a5568"}}&gt;<span class="s6">👤</span> <span class="s1">บัญชีทดลองใช้</span>&lt;/div&gt;&lt;div&gt;Admin: &lt;b&gt;admin&lt;/b&gt; / &lt;b&gt;admin1234&lt;/b&gt;&lt;/div&gt;&lt;div&gt;<span class="s1">คลัง</span>: &lt;b&gt;store&lt;/b&gt; / &lt;b&gt;store1234&lt;/b&gt;&lt;/div&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ===== GOOGLE SHEET SYNC MODAL =====</p>
+<p class="p1">function SheetSyncModal({onClose, products, receives, issues}) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [url,setUrl]=useState("");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [status,setStatus]=useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [syncing,setSyncing]=useState(false);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const doSync = async () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(!url.trim()){setStatus({ok:false,msg:"<span class="s1">กรุณากรอก</span> Apps Script URL"});return;}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setSyncing(true); setStatus(null);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>try {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const payload = {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>products: products.map(p=&gt;({code:p.code,name:p.name,unit:p.unit,qty:p.qty,minQty:p.minQty,maxQty:p.maxQty,status:p.qty&lt;p.minQty?"<span class="s1">ต่ำกว่ากำหนด</span>":"<span class="s1">ปกติ</span>"})),</p>
+<p class="p1"><span class="Apple-converted-space">        </span>receives: receives.map(r=&gt;({date:r.date,time:r.time||"",productCode:r.productCode,productName:r.productName,qty:r.qty,price:r.price,totalPrice:r.totalPrice,sourceType:r.sourceType,sourceName:r.sourceName||"",buyer:r.buyer})),</p>
+<p class="p1"><span class="Apple-converted-space">        </span>issues: issues.map(i=&gt;({date:i.date,time:i.time||"",productCode:i.productCode,productName:i.productName,qty:i.qty,requester:i.requester,department:i.department||""})),</p>
+<p class="p1"><span class="Apple-converted-space">      </span>};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const res = await fetch(url.trim(), {method:"POST",body:JSON.stringify(payload)});</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const txt = await res.text();</p>
+<p class="p1"><span class="Apple-converted-space">      </span>setStatus({ok:true,msg:"<span class="s6">✅</span> Sync <span class="s1">สำเร็จ</span>! <span class="s1">ข้อมูลถูกส่งไป</span> Google Sheet <span class="s1">แล้ว</span>"});</p>
+<p class="p1"><span class="Apple-converted-space">    </span>} catch(e) {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>setStatus({ok:false,msg:"<span class="s6">❌</span> <span class="s1">เชื่อมต่อไม่ได้</span> <span class="s1">กรุณาตรวจสอบ</span> URL <span class="s1">หรือ</span> CORS <span class="s1">ใน</span> Apps Script"});</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setSyncing(false);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const scriptCode = `function doPost(e) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>try {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const data = JSON.parse(e.postData.contents);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const ss = SpreadsheetApp.getActiveSpreadsheet();</p>
+<p class="p2"><span class="Apple-converted-space">    </span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// Sheet: <span class="s1">สต็อก</span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>let sh = ss.getSheetByName("<span class="s1">สต็อก</span>") || ss.insertSheet("<span class="s1">สต็อก</span>");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>sh.clearContents();</p>
+<p class="p3"><span class="s2"><span class="Apple-converted-space">    </span>sh.appendRow(["</span>รหัส<span class="s2">","</span>ชื่อสินค้า<span class="s2">","</span>หน่วย<span class="s2">","</span>คงเหลือ<span class="s2">","</span>ขั้นต่ำ<span class="s2">","</span>สูงสุด<span class="s2">","</span>สถานะ<span class="s2">"]);</span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>data.products.forEach(r =&gt; sh.appendRow([r.code,r.name,r.unit,r.qty,r.minQty,r.maxQty,r.status]));</p>
+<p class="p2"><span class="Apple-converted-space">    </span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// Sheet: <span class="s1">รับสินค้า</span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>sh = ss.getSheetByName("<span class="s1">รับสินค้า</span>") || ss.insertSheet("<span class="s1">รับสินค้า</span>");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>sh.clearContents();</p>
+<p class="p3"><span class="s2"><span class="Apple-converted-space">    </span>sh.appendRow(["</span>วันที่<span class="s2">","</span>เวลา<span class="s2">","</span>รหัส<span class="s2">","</span>ชื่อสินค้า<span class="s2">","</span>จำนวน<span class="s2">","</span>ราคา<span class="s2">/</span>หน่วย<span class="s2">","</span>รวม<span class="s2">","</span>ประเภท<span class="s2">","</span>ร้านค้า<span class="s2">","</span>คนซื้อ<span class="s2">"]);</span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>data.receives.forEach(r =&gt; sh.appendRow([r.date,r.time,r.productCode,r.productName,r.qty,r.price,r.totalPrice,r.sourceType,r.sourceName,r.buyer]));</p>
+<p class="p2"><span class="Apple-converted-space">    </span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// Sheet: <span class="s1">เบิกสินค้า</span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>sh = ss.getSheetByName("<span class="s1">เบิกสินค้า</span>") || ss.insertSheet("<span class="s1">เบิกสินค้า</span>");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>sh.clearContents();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>sh.appendRow(["<span class="s1">วันที่</span>","<span class="s1">เวลา</span>","<span class="s1">รหัส</span>","<span class="s1">ชื่อสินค้า</span>","<span class="s1">จำนวน</span>","<span class="s1">ผู้เบิก</span>","<span class="s1">แผนก</span>"]);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>data.issues.forEach(r =&gt; sh.appendRow([r.date,r.time,r.productCode,r.productName,r.qty,r.requester,r.department]));</p>
+<p class="p2"><span class="Apple-converted-space">    </span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>return ContentService.createTextOutput("ok").setMimeType(ContentService.MimeType.TEXT);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>} catch(err) {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>return ContentService.createTextOutput("error:"+err).setMimeType(ContentService.MimeType.TEXT);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1">}`;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,fontFamily:"'Sarabun',sans-serif"}} onClick={onClose}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style={{background:"#fff",borderRadius:14,padding:24,maxWidth:520,width:"95%",maxHeight:"90vh",overflowY:"auto"}} onClick={e=&gt;e.stopPropagation()}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{fontWeight:700,fontSize:16,color:"#1e3a5f",marginBottom:4}}&gt;<span class="s6">🔗</span> Sync <span class="s1">ข้อมูลไป</span> Google Sheet&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{color:"#888",fontSize:12,marginBottom:16}}&gt;<span class="s1">ส่งข้อมูลสต็อก</span>, <span class="s1">รับ</span>, <span class="s1">เบิก</span> <span class="s1">ไปอัปเดต</span> Google Sheet <span class="s1">ทันที</span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{background:"#f0fff4",border:"1px solid #9ae6b4",borderRadius:8,padding:14,marginBottom:14,fontSize:12}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{fontWeight:700,color:"#276749",marginBottom:8}}&gt;<span class="s6">📋</span> <span class="s1">วิธีตั้งค่า</span> Google Apps Script (<span class="s1">ทำครั้งเดียว</span>)&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{["<span class="s1">เปิด</span> Google Sheet <span class="s1">ใหม่</span> <span class="s4">→</span> Extensions <span class="s4">→</span> Apps Script","<span class="s1">ลบ</span> code <span class="s1">เดิมออก</span> <span class="s1">แล้ววาง</span> code <span class="s1">ด้านล่างนี้ลงไป</span>","<span class="s1">กด</span> Deploy <span class="s4">→</span> New deployment <span class="s4">→</span> Web app","Execute as: Me | Who has access: Anyone <span class="s4">→</span> Deploy","<span class="s1">คัดลอก</span> Web app URL <span class="s1">มาวางในช่องด้านล่าง</span>"].map((t,i)=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div key={i} style={{display:"flex",gap:8,marginBottom:4,alignItems:"flex-start"}}&gt;&lt;span style={{background:"#276749",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}&gt;{i+1}&lt;/span&gt;&lt;span style={{color:"#2d3748"}}&gt;{t}&lt;/span&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{marginBottom:14}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;Lbl c="#555"&gt;Apps Script Code (<span class="s1">วางทั้งหมดนี้</span>)&lt;/Lbl&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{position:"relative"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;textarea readOnly value={scriptCode} style={{...s({height:110,fontSize:10,fontFamily:"monospace",background:"#1a202c",color:"#68d391",resize:"none",padding:10})}}/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button onClick={()=&gt;{navigator.clipboard?.writeText(scriptCode);}} style={b("#38a169","#fff",{position:"absolute",top:6,right:6,fontSize:10,padding:"3px 8px"})}&gt;<span class="s1">คัดลอก</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{marginBottom:12}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;Lbl c="#555"&gt;Web App URL (<span class="s1">จาก</span> Deploy)&lt;/Lbl&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;input value={url} onChange={e=&gt;setUrl(e.target.value)} placeholder="https://script.google.com/macros/s/..." style={s({fontSize:12})}/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>{status&amp;&amp;&lt;div style={{background:status.ok?"#f0fff4":"#fff5f5",border:`1px solid ${status.ok?"#9ae6b4":"#fc8181"}`,borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:13,color:status.ok?"#276749":"#c53030"}}&gt;{status.msg}&lt;/div&gt;}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{display:"flex",gap:8}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;button onClick={doSync} disabled={syncing} style={b("#1e3a5f","#fff",{flex:1,opacity:syncing?.7:1})}&gt;{syncing?"<span class="s6">⏳</span> <span class="s1">กำลัง</span> Sync...":"<span class="s6">🚀</span> Sync <span class="s1">ไป</span> Google Sheet"}&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;button onClick={onClose} style={b("#718096","#fff")}&gt;<span class="s1">ปิด</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ===== MAIN APP =====</p>
+<p class="p1">export default function App() {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [currentUser,setCurrentUser] = useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [tab,setTab] = useState(0);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [products,setProducts] = useState(initProducts);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [receives,setReceives] = useState([]);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [issues,setIssues] = useState([]);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [movements,setMovements] = useState([]);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [prodHistory,setProdHistory] = useState({});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [toast,setToast] = useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [showSheet,setShowSheet] = useState(false);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const showToast = (msg,type="success")=&gt;{setToast({msg,type});setTimeout(()=&gt;setToast(null),3200);};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>useEffect(()=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>(async()=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>try{</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const keys=["ims6_products","ims6_receives","ims6_issues","ims6_movements","ims6_prodhistory"];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const [p,r,i,m,ph]=await Promise.all(keys.map(k=&gt;window.storage?.get(k).catch(()=&gt;null)));</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if(p)setProducts(JSON.parse(p.value));</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if(r)setReceives(JSON.parse(r.value));</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if(i)setIssues(JSON.parse(i.value));</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if(m)setMovements(JSON.parse(m.value));</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if(ph)setProdHistory(JSON.parse(ph.value));</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}catch(e){}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>})();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>},[]);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const save = useCallback(async(prods,recvs,iss,movs,ph)=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>try{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>await Promise.all([</p>
+<p class="p1"><span class="Apple-converted-space">        </span>window.storage?.set("ims6_products",JSON.stringify(prods??products)),</p>
+<p class="p1"><span class="Apple-converted-space">        </span>window.storage?.set("ims6_receives",JSON.stringify(recvs??receives)),</p>
+<p class="p1"><span class="Apple-converted-space">        </span>window.storage?.set("ims6_issues",JSON.stringify(iss??issues)),</p>
+<p class="p1"><span class="Apple-converted-space">        </span>window.storage?.set("ims6_movements",JSON.stringify(movs??movements)),</p>
+<p class="p1"><span class="Apple-converted-space">        </span>window.storage?.set("ims6_prodhistory",JSON.stringify(ph??prodHistory)),</p>
+<p class="p1"><span class="Apple-converted-space">      </span>]);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}catch(e){}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>},[products,receives,issues,movements,prodHistory]);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const savePH = useCallback(async(ph)=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>try{await window.storage?.set("ims6_prodhistory",JSON.stringify(ph));}catch(e){}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>},[]);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(!currentUser) return &lt;LoginScreen onLogin={u=&gt;{setCurrentUser(u);setTab(0);}}/&gt;;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const lowStock = products.filter(p=&gt;p.qty&lt;p.minQty);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const todaySpend = receives.filter(r=&gt;r.date===todayStr()).reduce((s,r)=&gt;s+(Number(r.price)||0)*(Number(r.qty)||0),0);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div style={{fontFamily:"'Sarabun',sans-serif",minHeight:"100vh",background:"#f0f4f8",fontSize:14}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style={{background:"#1e3a5f",color:"#fff",padding:"10px 18px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;span style={{fontSize:20}}&gt;<span class="s6">📦</span>&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;span style={{fontWeight:700,fontSize:16}}&gt;<span class="s1">ระบบจัดการสต็อกสินค้า</span>&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{lowStock.length&gt;0&amp;&amp;&lt;span style={{background:"#e53e3e",borderRadius:20,padding:"2px 10px",fontSize:11}}&gt;<span class="s6">⚠️</span> <span class="s1">สต็อกต่ำ</span> {lowStock.length} <span class="s1">รายการ</span>&lt;/span&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;button onClick={()=&gt;setShowSheet(true)} style={b("#38a169","#fff",{fontSize:11,padding:"4px 10px"})}&gt;<span class="s6">🔗</span> Sync Sheet&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{fontSize:12,textAlign:"right"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div style={{opacity:.8}}&gt;{currentUser.role==="admin"?"<span class="s6">👑</span> Admin":"<span class="s6">🏪</span> <span class="s1">พนักงานคลัง</span>"}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div style={{fontWeight:600}}&gt;{currentUser.displayName}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;button onClick={()=&gt;setCurrentUser(null)} style={b("#e53e3e","#fff",{fontSize:11,padding:"4px 10px"})}&gt;<span class="s1">ออกจากระบบ</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style={{display:"flex",background:"#fff",borderBottom:"2px solid #e2e8f0",overflowX:"auto"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{TABS.map((t,i)=&gt;&lt;button key={i} onClick={()=&gt;setTab(i)} style={{padding:"10px 16px",border:"none",background:"none",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:tab===i?700:400,color:tab===i?"#1e3a5f":"#555",borderBottom:tab===i?"3px solid #1e3a5f":"3px solid transparent",whiteSpace:"nowrap"}}&gt;{t}&lt;/button&gt;)}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style={{padding:"14px 12px",maxWidth:1000,margin:"0 auto"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{tab===0&amp;&amp;&lt;Dashboard products={products} receives={receives} issues={issues} lowStock={lowStock} todaySpend={todaySpend} setTab={setTab}/&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{tab===1&amp;&amp;&lt;ProductsTab products={products} setProducts={setProducts} prodHistory={prodHistory} setProdHistory={setProdHistory} showToast={showToast} save={save} savePH={savePH} receives={receives} issues={issues}/&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{tab===2&amp;&amp;&lt;ReceiveTab products={products} setProducts={setProducts} receives={receives} setReceives={setReceives} movements={movements} setMovements={setMovements} prodHistory={prodHistory} setProdHistory={setProdHistory} showToast={showToast} save={save} currentUser={currentUser}/&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{tab===3&amp;&amp;&lt;IssueTab products={products} setProducts={setProducts} issues={issues} setIssues={setIssues} movements={movements} setMovements={setMovements} showToast={showToast} save={save} currentUser={currentUser}/&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{tab===4&amp;&amp;&lt;ReportTab products={products} receives={receives} issues={issues} movements={movements}/&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>{showSheet&amp;&amp;&lt;SheetSyncModal onClose={()=&gt;setShowSheet(false)} products={products} receives={receives} issues={issues}/&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{toast&amp;&amp;&lt;div style={{position:"fixed",bottom:24,right:24,background:toast.type==="success"?"#38a169":"#e53e3e",color:"#fff",padding:"10px 20px",borderRadius:8,boxShadow:"0 4px 12px rgba(0,0,0,.25)",zIndex:400,fontSize:13}}&gt;{toast.type==="success"?"<span class="s6">✅</span>":"<span class="s6">❌</span>"} {toast.msg}&lt;/div&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ===== DASHBOARD =====</p>
+<p class="p1">function Dashboard({products,receives,issues,lowStock,todaySpend,setTab}) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const todayR=receives.filter(r=&gt;r.date===todayStr()).reduce((s,r)=&gt;s+Number(r.qty||0),0);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const todayI=issues.filter(r=&gt;r.date===todayStr()).reduce((s,r)=&gt;s+Number(r.qty||0),0);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;h3 style={{margin:"0 0 12px",color:"#1e3a5f"}}&gt;<span class="s6">📊</span> <span class="s1">ภาพรวมระบบ</span>&lt;/h3&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(145px,1fr))",gap:10,marginBottom:16}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{[{l:"<span class="s1">สินค้าทั้งหมด</span>",v:products.length+" <span class="s1">รายการ</span>",icon:"<span class="s6">📋</span>",c:"#3182ce"},{l:"<span class="s1">ค่าใช้จ่ายวันนี้</span>",v:"฿"+fmt(todaySpend),icon:"<span class="s6">💸</span>",c:"#805ad5"},{l:"<span class="s1">รับเข้าวันนี้</span>",v:fmt(todayR)+" <span class="s1">ชิ้น</span>",icon:"<span class="s6">📥</span>",c:"#38a169"},{l:"<span class="s1">เบิกออกวันนี้</span>",v:fmt(todayI)+" <span class="s1">ชิ้น</span>",icon:"<span class="s6">📤</span>",c:"#dd6b20"},{l:"<span class="s1">สต็อกต่ำกว่ากำหนด</span>",v:lowStock.length+" <span class="s1">รายการ</span>",icon:"<span class="s6">⚠️</span>",c:"#e53e3e"}].map((c,i)=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div key={i} style={{background:"#fff",borderRadius:10,padding:"12px",borderLeft:`4px solid ${c.c}`,boxShadow:"0 1px 4px rgba(0,0,0,.08)"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div style={{fontSize:20}}&gt;{c.icon}&lt;/div&gt;&lt;div style={{fontWeight:700,fontSize:15,color:c.c}}&gt;{c.v}&lt;/div&gt;&lt;div style={{color:"#666",fontSize:11,marginTop:2}}&gt;{c.l}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{lowStock.length&gt;0&amp;&amp;&lt;div style={{background:"#fff5f5",border:"1px solid #fc8181",borderRadius:10,padding:14,marginBottom:12}}&gt;&lt;div style={{fontWeight:700,color:"#c53030",marginBottom:8}}&gt;<span class="s6">⚠️</span> <span class="s1">สินค้าต่ำกว่าจำนวนขั้นต่ำ</span>&lt;/div&gt;{lowStock.map(p=&gt;&lt;div key={p.id} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid #fed7d7",fontSize:13}}&gt;&lt;span&gt;{p.code} — {p.name}&lt;/span&gt;&lt;span style={{color:"#e53e3e",fontWeight:700}}&gt;<span class="s1">เหลือ</span> {fmt(p.qty)} {p.unit}&lt;/span&gt;&lt;/div&gt;)}&lt;/div&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{fontWeight:700,color:"#1e3a5f",marginBottom:8}}&gt;<span class="s6">📦</span> <span class="s1">สต็อกสินค้าทั้งหมด</span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{overflowX:"auto"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;thead&gt;&lt;tr style={{background:"#edf2f7"}}&gt;{["<span class="s1">รูป</span>","<span class="s1">รหัส</span>","<span class="s1">ชื่อสินค้า</span>","<span class="s1">คงเหลือ</span>","<span class="s1">หน่วย</span>","<span class="s1">ขั้นต่ำ</span>","<span class="s1">สถานะ</span>"].map(h=&gt;&lt;th key={h} style={{padding:"6px 8px",textAlign:"left"}}&gt;{h}&lt;/th&gt;)}&lt;/tr&gt;&lt;/thead&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;tbody&gt;{products.map(p=&gt;&lt;tr key={p.id} style={{borderBottom:"1px solid #e2e8f0",background:p.qty&lt;p.minQty?"#fff5f5":"#fff"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"4px 8px"}}&gt;{p.image?&lt;img src={p.image} style={{width:36,height:36,objectFit:"cover",borderRadius:6}} alt=""/&gt;:&lt;span style={{fontSize:20}}&gt;<span class="s6">📦</span>&lt;/span&gt;}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px"}}&gt;{p.code}&lt;/td&gt;&lt;td style={{padding:"6px 8px",fontWeight:600}}&gt;{p.name}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px",fontWeight:700,color:p.qty&lt;p.minQty?"#e53e3e":"#38a169"}}&gt;{fmt(p.qty)}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px"}}&gt;{p.unit}&lt;/td&gt;&lt;td style={{padding:"6px 8px"}}&gt;{fmt(p.minQty)}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px"}}&gt;&lt;span style={{background:p.qty&lt;p.minQty?"#fed7d7":"#c6f6d5",color:p.qty&lt;p.minQty?"#c53030":"#276749",borderRadius:12,padding:"2px 8px",fontSize:10}}&gt;{p.qty&lt;p.minQty?"<span class="s6">⚠️</span> <span class="s1">ต่ำ</span>":"<span class="s6">✅</span> <span class="s1">ปกติ</span>"}&lt;/span&gt;&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/tr&gt;)}&lt;/tbody&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/table&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ===== PRODUCTS TAB (<span class="s1">ค้นหารายการ</span>) =====</p>
+<p class="p1">function ProductsTab({products,setProducts,prodHistory,setProdHistory,showToast,save,savePH,receives,issues}) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [search,setSearch]=useState("");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [showForm,setShowForm]=useState(false);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [editId,setEditId]=useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [viewHist,setViewHist]=useState(null); // {product, tab: 'buy'|'recv'|'issue'}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [viewer,setViewer]=useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const empty={code:"",name:"",unit:"",qty:0,minQty:0,maxQty:0,image:null,initPrice:0,initSourceType:"<span class="s1">ร้านค้าทั่วไป</span>",initSourceName:"",initBuyer:"",initDate:todayStr()};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [form,setForm]=useState(empty);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [preview,setPreview]=useState(null);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const handleImg=async e=&gt;{const f=e.target.files[0];if(!f)return;const d=await readImg(f);setPreview(d);setForm(fm=&gt;({...fm,image:d}));};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const handleSave=()=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(!form.code||!form.name){showToast("<span class="s1">กรุณากรอกรหัสและชื่อสินค้า</span>","error");return;}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let updated;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(editId){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>updated=products.map(p=&gt;p.id===editId?{...p,...form,qty:Number(form.qty),minQty:Number(form.minQty),maxQty:Number(form.maxQty)}:p);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>showToast("<span class="s1">แก้ไขสินค้าเรียบร้อย</span>");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}else{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const newP={...form,id:Date.now(),qty:Number(form.qty),minQty:Number(form.minQty),maxQty:Number(form.maxQty)};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>updated=[...products,newP];</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(Number(form.initPrice)&gt;0||form.initSourceName||form.initBuyer){</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const e2={id:Date.now(),price:Number(form.initPrice),sourceType:form.initSourceType,sourceName:form.initSourceName,buyer:form.initBuyer,date:form.initDate,qty:Number(form.qty),note:"<span class="s1">เพิ่มสินค้าครั้งแรก</span>"};</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const nh={...prodHistory,[newP.id]:[e2,...(prodHistory[newP.id]||[])]};</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setProdHistory(nh);savePH(nh);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>showToast("<span class="s1">เพิ่มสินค้าเรียบร้อย</span>");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setProducts(updated);save(updated);setShowForm(false);setEditId(null);setForm(empty);setPreview(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const handleEdit=p=&gt;{setForm({...p,initPrice:0,initSourceType:"<span class="s1">ร้านค้าทั่วไป</span>",initSourceName:"",initBuyer:"",initDate:todayStr()});setPreview(p.image||null);setEditId(p.id);setShowForm(true);};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const handleDel=id=&gt;{if(!window.confirm("<span class="s1">ยืนยันลบสินค้านี้</span>?"))return;const u=products.filter(p=&gt;p.id!==id);setProducts(u);save(u);showToast("<span class="s1">ลบสินค้าเรียบร้อย</span>");};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const filtered=products.filter(p=&gt;p.name.includes(search)||p.code.includes(search));</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>// history for a product</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const getRecvHist=pid=&gt;receives.filter(r=&gt;r.productId===pid);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const getIssueHist=pid=&gt;issues.filter(i=&gt;i.productId===pid);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;input value={search} onChange={e=&gt;setSearch(e.target.value)} placeholder="<span class="s6">🔍</span> <span class="s1">ค้นหาสินค้า</span>..." style={s({flex:1,minWidth:160})}/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button onClick={()=&gt;{setShowForm(true);setEditId(null);setForm(empty);setPreview(null);}} style={b("#1e3a5f","#fff")}&gt;+ <span class="s1">เพิ่มสินค้า</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>{showForm&amp;&amp;(</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;Card style={{marginBottom:12}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{fontWeight:700,color:"#1e3a5f",marginBottom:12}}&gt;{editId?"<span class="s6">✏️</span> <span class="s1">แก้ไขสินค้า</span>":"<span class="s6">➕</span> <span class="s1">เพิ่มสินค้าใหม่</span>"}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{[["code","<span class="s1">รหัสสินค้า</span>","text"],["name","<span class="s1">ชื่อสินค้า</span>","text"],["unit","<span class="s1">หน่วย</span>","text"],["qty","<span class="s1">จำนวนเริ่มต้น</span>","number"],["minQty","<span class="s1">จำนวนขั้นต่ำ</span>","number"],["maxQty","<span class="s1">จำนวนสูงสุด</span>","number"]].map(([k,l,t])=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div key={k}&gt;&lt;Lbl&gt;{l}&lt;/Lbl&gt;&lt;input type={t} value={form[k]} onChange={e=&gt;setForm(f=&gt;({...f,[k]:e.target.value}))} style={s()}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{!editId&amp;&amp;(</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div style={{margin:"12px 0 8px",fontWeight:600,color:"#4a5568",fontSize:13,borderTop:"1px solid #e2e8f0",paddingTop:10}}&gt;<span class="s6">📋</span> <span class="s1">ข้อมูลการซื้อครั้งแรก</span> (<span class="s1">ถ้ามี</span>)&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div&gt;&lt;Lbl&gt;<span class="s1">ราคา</span>/<span class="s1">หน่วย</span>&lt;/Lbl&gt;&lt;input type="number" value={form.initPrice} onChange={e=&gt;setForm(f=&gt;({...f,initPrice:e.target.value}))} style={s()}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div&gt;&lt;Lbl&gt;<span class="s1">วันที่ซื้อ</span>&lt;/Lbl&gt;&lt;input type="date" value={form.initDate} onChange={e=&gt;setForm(f=&gt;({...f,initDate:e.target.value}))} style={s()}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div&gt;&lt;Lbl&gt;<span class="s1">ประเภทแหล่งที่ซื้อ</span>&lt;/Lbl&gt;&lt;select value={form.initSourceType} onChange={e=&gt;setForm(f=&gt;({...f,initSourceType:e.target.value}))} style={s()}&gt;{SOURCE_TYPES.map(x=&gt;&lt;option key={x}&gt;{x}&lt;/option&gt;)}&lt;/select&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div&gt;&lt;Lbl&gt;<span class="s1">ชื่อร้าน</span> / <span class="s1">แหล่งที่ซื้อ</span>&lt;/Lbl&gt;&lt;input value={form.initSourceName} onChange={e=&gt;setForm(f=&gt;({...f,initSourceName:e.target.value}))} placeholder="<span class="s1">เช่น</span> Shopee, BigC..." style={s()}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{gridColumn:"1/-1"}}&gt;&lt;Lbl&gt;<span class="s1">คนที่ไปซื้อ</span>&lt;/Lbl&gt;&lt;input value={form.initBuyer} onChange={e=&gt;setForm(f=&gt;({...f,initBuyer:e.target.value}))} style={s()}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{marginTop:10}}&gt;&lt;Lbl&gt;<span class="s1">รูปภาพสินค้า</span>&lt;/Lbl&gt;&lt;input type="file" accept="image/*" onChange={handleImg} style={{fontSize:12}}/&gt;{preview&amp;&amp;&lt;img src={preview} style={{width:80,height:80,objectFit:"cover",borderRadius:8,marginTop:6,display:"block"}} alt="p"/&gt;}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{display:"flex",gap:8,marginTop:12}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button onClick={handleSave} style={b("#38a169","#fff")}&gt;<span class="s6">💾</span> <span class="s1">บันทึก</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button onClick={()=&gt;setShowForm(false)} style={b("#718096","#fff")}&gt;<span class="s1">ยกเลิก</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>)}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{overflowX:"auto"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;thead&gt;&lt;tr style={{background:"#edf2f7"}}&gt;{["<span class="s1">รูป</span>","<span class="s1">รหัส</span>","<span class="s1">ชื่อสินค้า</span>","<span class="s1">คงเหลือ</span>","<span class="s1">หน่วย</span>","<span class="s1">ขั้นต่ำ</span>/<span class="s1">สูงสุด</span>","<span class="s1">สถานะ</span>","<span class="s1">จัดการ</span>"].map(h=&gt;&lt;th key={h} style={{padding:"6px 8px",textAlign:"left",whiteSpace:"nowrap"}}&gt;{h}&lt;/th&gt;)}&lt;/tr&gt;&lt;/thead&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;tbody&gt;{filtered.map(p=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;tr key={p.id} style={{borderBottom:"1px solid #e2e8f0",background:p.qty&lt;p.minQty?"#fff5f5":"#fff"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;td style={{padding:"4px 8px"}}&gt;{p.image?&lt;img src={p.image} onClick={()=&gt;setViewer({images:[p.image],idx:0})} style={{width:40,height:40,objectFit:"cover",borderRadius:6,cursor:"pointer"}} alt=""/&gt;:&lt;span style={{fontSize:24}}&gt;<span class="s6">📦</span>&lt;/span&gt;}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;td style={{padding:"6px 8px"}}&gt;{p.code}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;td style={{padding:"6px 8px",fontWeight:600}}&gt;{p.name}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;td style={{padding:"6px 8px",fontWeight:700,color:p.qty&lt;p.minQty?"#e53e3e":"#38a169"}}&gt;{fmt(p.qty)}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;td style={{padding:"6px 8px"}}&gt;{p.unit}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;td style={{padding:"6px 8px"}}&gt;{fmt(p.minQty)}/{fmt(p.maxQty)}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;td style={{padding:"6px 8px"}}&gt;&lt;span style={{background:p.qty&lt;p.minQty?"#fed7d7":"#c6f6d5",color:p.qty&lt;p.minQty?"#c53030":"#276749",borderRadius:12,padding:"2px 6px",fontSize:10}}&gt;{p.qty&lt;p.minQty?"<span class="s6">⚠️</span> <span class="s1">ต่ำ</span>":"<span class="s6">✅</span> <span class="s1">ปกติ</span>"}&lt;/span&gt;&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;td style={{padding:"6px 8px"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;div style={{display:"flex",gap:3,flexWrap:"wrap"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;button onClick={()=&gt;handleEdit(p)} style={b("#3182ce","#fff",{fontSize:11,padding:"2px 7px"})}&gt;<span class="s1">แก้ไข</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;button onClick={()=&gt;setViewHist({product:p,histTab:"buy"})} style={b("#805ad5","#fff",{fontSize:11,padding:"2px 7px"})}&gt;<span class="s1">ประวัติ</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;button onClick={()=&gt;handleDel(p.id)} style={b("#e53e3e","#fff",{fontSize:11,padding:"2px 7px"})}&gt;<span class="s1">ลบ</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/tr&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>))}&lt;/tbody&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/table&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/Card&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>{/* History Modal — <span class="s1">แสดงทั้งประวัติซื้อ</span>, <span class="s1">รับ</span>, <span class="s1">เบิก</span> */}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{viewHist&amp;&amp;(()=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const p=viewHist.product;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const buyList=prodHistory[p.id]||[];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const recvList=getRecvHist(p.id);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const issueList=getIssueHist(p.id);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const htabs=[{k:"buy",l:`<span class="s1">ประวัติการซื้อ</span> (${buyList.length})`},{k:"recv",l:`<span class="s1">ประวัติรับสินค้า</span> (${recvList.length})`},{k:"issue",l:`<span class="s1">ประวัติการเบิก</span> (${issueList.length})`}];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;Modal title={`<span class="s6">📋</span> <span class="s1">ประวัติสินค้า</span>: ${p.name}`} onClose={()=&gt;setViewHist(null)} wide&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>{htabs.map(ht=&gt;&lt;button key={ht.k} onClick={()=&gt;setViewHist(v=&gt;({...v,histTab:ht.k}))} style={b(viewHist.histTab===ht.k?"#805ad5":"#e2e8f0",viewHist.histTab===ht.k?"#fff":"#333",{fontSize:12,padding:"4px 10px"})}&gt;{ht.l}&lt;/button&gt;)}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{viewHist.histTab==="buy"&amp;&amp;(buyList.length===0?&lt;div style={{color:"#aaa",textAlign:"center",padding:20}}&gt;<span class="s1">ยังไม่มีประวัติการซื้อ</span>&lt;/div&gt;:buyList.map((h,i)=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div key={i} style={{borderBottom:"1px solid #e2e8f0",padding:"8px 0",fontSize:13}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{display:"flex",justifyContent:"space-between"}}&gt;&lt;span style={{fontWeight:600}}&gt;{h.date}&lt;/span&gt;&lt;span style={{color:"#805ad5",fontWeight:700}}&gt;฿{fmt(h.price)}/<span class="s1">หน่วย</span>&lt;/span&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{color:"#666"}}&gt;<span class="s1">จำนวน</span> {fmt(h.qty)} | <span class="s1">รวม</span> ฿{fmt((h.price||0)*(h.qty||0))}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{color:"#888"}}&gt;{h.sourceType} — {h.sourceName||"-"} | <span class="s1">ผู้ซื้อ</span>: {h.buyer||"-"}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>)))}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{viewHist.histTab==="recv"&amp;&amp;(recvList.length===0?&lt;div style={{color:"#aaa",textAlign:"center",padding:20}}&gt;<span class="s1">ยังไม่มีประวัติรับสินค้า</span>&lt;/div&gt;:recvList.map((r,i)=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div key={i} style={{borderBottom:"1px solid #e2e8f0",padding:"8px 0",fontSize:13}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{display:"flex",justifyContent:"space-between"}}&gt;&lt;span style={{fontWeight:600}}&gt;{r.date} {r.time||""}&lt;/span&gt;&lt;span style={{color:"#38a169",fontWeight:700}}&gt;+{fmt(r.qty)}&lt;/span&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{color:"#666"}}&gt;<span class="s1">ผู้รับ</span>: {r.buyer} | {r.sourceType} — {r.sourceName||"-"}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;ThumbRow images={r.attachImages||[]} onView={idx=&gt;setViewer({images:r.attachImages,idx})}/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>)))}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{viewHist.histTab==="issue"&amp;&amp;(issueList.length===0?&lt;div style={{color:"#aaa",textAlign:"center",padding:20}}&gt;<span class="s1">ยังไม่มีประวัติการเบิก</span>&lt;/div&gt;:issueList.map((r,i)=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div key={i} style={{borderBottom:"1px solid #e2e8f0",padding:"8px 0",fontSize:13}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{display:"flex",justifyContent:"space-between"}}&gt;&lt;span style={{fontWeight:600}}&gt;{r.date} {r.time||""}&lt;/span&gt;&lt;span style={{color:"#e53e3e",fontWeight:700}}&gt;-{fmt(r.qty)}&lt;/span&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{color:"#666"}}&gt;<span class="s1">ผู้เบิก</span>: {r.requester} | <span class="s1">แผนก</span>: {r.department||"-"}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;ThumbRow images={r.attachImages||[]} onView={idx=&gt;setViewer({images:r.attachImages,idx})}/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>)))}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/Modal&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>})()}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>{viewer&amp;&amp;&lt;ImageViewer images={viewer.images} startIdx={viewer.idx} onClose={()=&gt;setViewer(null)}/&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ===== RECEIVE TAB =====</p>
+<p class="p1">function ReceiveTab({products,setProducts,receives,setReceives,movements,setMovements,prodHistory,setProdHistory,showToast,save,currentUser}) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const ef=()=&gt;({productId:"",sourceType:"<span class="s1">ร้านค้าทั่วไป</span>",sourceName:"",qty:"",price:"",buyer:currentUser.displayName,date:todayStr(),time:nowTime(),note:"",attachImages:[]});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [form,setForm]=useState(ef());</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [editId,setEditId]=useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [viewRec,setViewRec]=useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [viewer,setViewer]=useState(null);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const savePH=async h=&gt;{try{await window.storage?.set("ims6_prodhistory",JSON.stringify(h));}catch(e){}};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const resetForm=()=&gt;{setForm(ef());setEditId(null);};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const handleSubmit=()=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(!form.productId||!form.qty||!form.buyer){showToast("<span class="s1">กรุณากรอกข้อมูลให้ครบ</span>","error");return;}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const prod=products.find(p=&gt;p.id===Number(form.productId));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const qn=Number(form.qty),pn=Number(form.price)||0;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(editId){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const old=receives.find(r=&gt;r.id===editId);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const diff=qn-(old.qty||0);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const updP=products.map(p=&gt;p.id===Number(form.productId)?{...p,qty:p.qty+diff}:p);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const newR=receives.map(r=&gt;r.id===editId?{...r,...form,qty:qn,price:pn,totalPrice:qn*pn,productCode:prod.code,productName:prod.name}:r);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>setProducts(updP);setReceives(newR);save(updP,newR);showToast("<span class="s1">แก้ไขรายการเรียบร้อย</span>");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}else{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const rec={id:Date.now(),productId:Number(form.productId),productCode:prod.code,productName:prod.name,sourceType:form.sourceType,sourceName:form.sourceName,qty:qn,price:pn,totalPrice:qn*pn,buyer:form.buyer,date:form.date,time:form.time,note:form.note,attachImages:form.attachImages||[]};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const updP=products.map(p=&gt;p.id===Number(form.productId)?{...p,qty:p.qty+qn}:p);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const newR=[rec,...receives];</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const newM=[{id:Date.now(),type:"<span class="s1">รับเข้า</span>",productCode:prod.code,productName:prod.name,qty:qn,by:form.buyer,date:form.date,time:form.time},...movements];</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const entry={id:rec.id,price:pn,sourceType:form.sourceType,sourceName:form.sourceName,buyer:form.buyer,date:form.date,qty:qn};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const nh={...prodHistory,[prod.id]:[entry,...(prodHistory[prod.id]||[])]};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>setProdHistory(nh);savePH(nh);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>setProducts(updP);setReceives(newR);setMovements(newM);save(updP,newR,undefined,newM);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>showToast(`<span class="s1">รับสินค้า</span> "${prod.name}" <span class="s1">จำนวน</span> ${qn} <span class="s1">เรียบร้อย</span>`);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>resetForm();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const handleEdit=r=&gt;{setForm({...r,productId:r.productId,attachImages:r.attachImages||[]});setEditId(r.id);};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const handleDel=id=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(!window.confirm("<span class="s1">ยืนยันลบ</span>?"))return;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const old=receives.find(r=&gt;r.id===id);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const updP=products.map(p=&gt;p.id===old.productId?{...p,qty:p.qty-(old.qty||0)}:p);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const newR=receives.filter(r=&gt;r.id!==id);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setProducts(updP);setReceives(newR);save(updP,newR);showToast("<span class="s1">ลบรายการเรียบร้อย</span>");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{fontWeight:700,color:"#1e3a5f",marginBottom:12}}&gt;{editId?"<span class="s6">✏️</span> <span class="s1">แก้ไขรายการรับสินค้า</span>":"<span class="s6">📥</span> <span class="s1">บันทึกรับสินค้าเข้า</span>"}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{marginBottom:8}}&gt;&lt;Lbl&gt;<span class="s1">สินค้า</span>&lt;/Lbl&gt;&lt;select value={form.productId} onChange={e=&gt;setForm(f=&gt;({...f,productId:e.target.value}))} style={s()}&gt;&lt;option value=""&gt;-- <span class="s1">เลือกสินค้า</span> --&lt;/option&gt;{products.map(p=&gt;&lt;option key={p.id} value={p.id}&gt;{p.code} — {p.name} (<span class="s1">เหลือ</span> {p.qty})&lt;/option&gt;)}&lt;/select&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{marginBottom:8}}&gt;&lt;Lbl&gt;<span class="s1">ประเภทแหล่งที่ซื้อ</span>&lt;/Lbl&gt;&lt;select value={form.sourceType} onChange={e=&gt;setForm(f=&gt;({...f,sourceType:e.target.value}))} style={s()}&gt;{SOURCE_TYPES.map(x=&gt;&lt;option key={x}&gt;{x}&lt;/option&gt;)}&lt;/select&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{marginBottom:8}}&gt;&lt;Lbl&gt;<span class="s1">ชื่อร้าน</span> / <span class="s1">แหล่งที่ซื้อ</span>&lt;/Lbl&gt;&lt;input value={form.sourceName} onChange={e=&gt;setForm(f=&gt;({...f,sourceName:e.target.value}))} placeholder="<span class="s1">เช่น</span> Shopee, BigC..." style={s()}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{[["qty","<span class="s1">จำนวนที่รับ</span>","number"],["price","<span class="s1">ราคา</span>/<span class="s1">หน่วย</span> (<span class="s1">บาท</span>)","number"],["buyer","<span class="s1">คนที่ไปซื้อ</span> / <span class="s1">ผู้รับ</span>","text"]].map(([k,l,t])=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div key={k} style={{marginBottom:8}}&gt;&lt;Lbl&gt;{l}&lt;/Lbl&gt;&lt;input type={t} value={form[k]} onChange={e=&gt;setForm(f=&gt;({...f,[k]:e.target.value}))} style={s()}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div&gt;&lt;Lbl&gt;<span class="s1">วันที่รับ</span>&lt;/Lbl&gt;&lt;input type="date" value={form.date} onChange={e=&gt;setForm(f=&gt;({...f,date:e.target.value}))} style={s()}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div&gt;&lt;Lbl&gt;<span class="s1">เวลาที่รับ</span>&lt;/Lbl&gt;&lt;input type="time" value={form.time} onChange={e=&gt;setForm(f=&gt;({...f,time:e.target.value}))} style={s()}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{marginBottom:8}}&gt;&lt;Lbl&gt;<span class="s1">หมายเหตุ</span>&lt;/Lbl&gt;&lt;input value={form.note} onChange={e=&gt;setForm(f=&gt;({...f,note:e.target.value}))} style={s()}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{marginBottom:10}}&gt;&lt;AttachImages images={form.attachImages||[]} onChange={imgs=&gt;setForm(f=&gt;({...f,attachImages:imgs}))}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{form.qty&amp;&amp;form.price&amp;&amp;&lt;div style={{background:"#ebf8ff",borderRadius:8,padding:"8px 12px",marginBottom:8,fontSize:13,color:"#2b6cb0"}}&gt;<span class="s6">💸</span> <span class="s1">รวมจ่าย</span>: &lt;b&gt;฿{fmt(Number(form.qty)*Number(form.price))}&lt;/b&gt;&lt;/div&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{display:"flex",gap:8}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button onClick={handleSubmit} style={b("#38a169","#fff",{flex:1})}&gt;<span class="s6">✅</span> {editId?"<span class="s1">บันทึกแก้ไข</span>":"<span class="s1">บันทึกรับสินค้า</span>"}&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{editId&amp;&amp;&lt;button onClick={resetForm} style={b("#718096","#fff")}&gt;<span class="s1">ยกเลิก</span>&lt;/button&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{fontWeight:700,color:"#1e3a5f",marginBottom:8}}&gt;<span class="s6">📋</span> <span class="s1">ประวัติรับสินค้า</span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{overflowY:"auto",maxHeight:520}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{receives.length===0?&lt;div style={{color:"#aaa",textAlign:"center",marginTop:40}}&gt;<span class="s1">ยังไม่มีรายการ</span>&lt;/div&gt;:</p>
+<p class="p1"><span class="Apple-converted-space">            </span>receives.slice(0,50).map(r=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div key={r.id} style={{borderBottom:"1px solid #e2e8f0",padding:"8px 0",fontSize:12}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{display:"flex",justifyContent:"space-between"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;span style={{fontWeight:600}}&gt;{r.productCode} — {r.productName}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;span style={{color:"#888",fontSize:11}}&gt;{r.date} {r.time||""}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{color:"#666"}}&gt;<span class="s1">จำนวน</span>: &lt;b style={{color:"#38a169"}}&gt;{fmt(r.qty)}&lt;/b&gt; | {r.sourceType} — {r.sourceName||"-"}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{color:"#888"}}&gt;<span class="s1">ผู้รับ</span>: {r.buyer}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;ThumbRow images={r.attachImages||[]} onView={idx=&gt;setViewer({images:r.attachImages,idx})}/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{display:"flex",gap:4,marginTop:5}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;button onClick={()=&gt;setViewRec(r)} style={b("#805ad5","#fff",{fontSize:10,padding:"2px 8px"})}&gt;<span class="s1">ดูราคา</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;button onClick={()=&gt;handleEdit(r)} style={b("#3182ce","#fff",{fontSize:10,padding:"2px 8px"})}&gt;<span class="s1">แก้ไข</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;button onClick={()=&gt;handleDel(r.id)} style={b("#e53e3e","#fff",{fontSize:10,padding:"2px 8px"})}&gt;<span class="s1">ลบ</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{viewRec&amp;&amp;(</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;Modal title="<span class="s6">🔍</span> <span class="s1">รายละเอียดการซื้อ</span>" onClose={()=&gt;setViewRec(null)}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{[["<span class="s1">สินค้า</span>",`${viewRec.productCode} — ${viewRec.productName}`],["<span class="s1">วันที่</span> / <span class="s1">เวลา</span>",`${viewRec.date} ${viewRec.time||""}`],["<span class="s1">จำนวน</span>",`${fmt(viewRec.qty)} <span class="s1">ชิ้น</span>`],["<span class="s1">ราคา</span>/<span class="s1">หน่วย</span>",`฿${fmt(viewRec.price)}`],["<span class="s1">รวมจ่าย</span>",`฿${fmt(viewRec.totalPrice)}`],["<span class="s1">แหล่งที่ซื้อ</span>",`${viewRec.sourceType} — ${viewRec.sourceName||"-"}`],["<span class="s1">คนที่ไปซื้อ</span>",viewRec.buyer],["<span class="s1">หมายเหตุ</span>",viewRec.note||"-"]].map(([l,v])=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div key={l} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid #e2e8f0",fontSize:13}}&gt;&lt;span style={{color:"#666"}}&gt;{l}&lt;/span&gt;&lt;span style={{fontWeight:600,color:"#1e3a5f"}}&gt;{v}&lt;/span&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{(viewRec.attachImages||[]).length&gt;0&amp;&amp;&lt;div style={{marginTop:10}}&gt;&lt;Lbl c="#555"&gt;<span class="s6">📎</span> <span class="s1">รูปภาพแนบ</span>&lt;/Lbl&gt;&lt;div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:6}}&gt;{(viewRec.attachImages||[]).map((img,i)=&gt;&lt;img key={i} src={img} onClick={()=&gt;setViewer({images:viewRec.attachImages,idx:i})} style={{width:72,height:72,objectFit:"cover",borderRadius:7,border:"1px solid #e2e8f0",cursor:"pointer"}} alt={`r${i}`}/&gt;)}&lt;/div&gt;&lt;/div&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/Modal&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{viewer&amp;&amp;&lt;ImageViewer images={viewer.images} startIdx={viewer.idx} onClose={()=&gt;setViewer(null)}/&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ===== ISSUE TAB =====</p>
+<p class="p1">function IssueTab({products,setProducts,issues,setIssues,movements,setMovements,showToast,save,currentUser}) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const ef=()=&gt;({productId:"",qty:"",requester:currentUser.displayName,department:"",date:todayStr(),time:nowTime(),note:"",attachImages:[]});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [form,setForm]=useState(ef());</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [editId,setEditId]=useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [viewIss,setViewIss]=useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [viewer,setViewer]=useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const resetForm=()=&gt;{setForm(ef());setEditId(null);};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const handleSubmit=()=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(!form.productId||!form.qty||!form.requester){showToast("<span class="s1">กรุณากรอกข้อมูลให้ครบ</span>","error");return;}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const prod=products.find(p=&gt;p.id===Number(form.productId));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const qn=Number(form.qty);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(editId){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const old=issues.find(i=&gt;i.id===editId);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const diff=qn-(old.qty||0);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(prod.qty-diff&lt;0){showToast("<span class="s1">สินค้าไม่เพียงพอ</span>","error");return;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const updP=products.map(p=&gt;p.id===Number(form.productId)?{...p,qty:p.qty-diff}:p);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const newI=issues.map(i=&gt;i.id===editId?{...i,...form,qty:qn}:i);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>setProducts(updP);setIssues(newI);save(updP,undefined,newI);showToast("<span class="s1">แก้ไขรายการเรียบร้อย</span>");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}else{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(qn&gt;prod.qty){showToast(`<span class="s1">สินค้าไม่พอ</span> <span class="s1">เหลือ</span> ${prod.qty} ${prod.unit}`,"error");return;}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const iss={id:Date.now(),productId:Number(form.productId),productCode:prod.code,productName:prod.name,qty:qn,requester:form.requester,department:form.department,date:form.date,time:form.time,note:form.note,attachImages:form.attachImages||[]};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const updP=products.map(p=&gt;p.id===Number(form.productId)?{...p,qty:p.qty-qn}:p);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const newI=[iss,...issues];</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const newM=[{id:Date.now(),type:"<span class="s1">เบิกออก</span>",productCode:prod.code,productName:prod.name,qty:-qn,by:form.requester,dept:form.department,date:form.date,time:form.time},...movements];</p>
+<p class="p1"><span class="Apple-converted-space">      </span>setProducts(updP);setIssues(newI);setMovements(newM);save(updP,undefined,newI,newM);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>showToast(`<span class="s1">เบิก</span> "${prod.name}" <span class="s1">จำนวน</span> ${qn} <span class="s1">เรียบร้อย</span>`);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>resetForm();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const handleEdit=r=&gt;{setForm({...r,productId:r.productId,attachImages:r.attachImages||[]});setEditId(r.id);};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const handleDel=id=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(!window.confirm("<span class="s1">ยืนยันลบ</span>?"))return;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const old=issues.find(i=&gt;i.id===id);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const updP=products.map(p=&gt;p.id===old.productId?{...p,qty:p.qty+(old.qty||0)}:p);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const newI=issues.filter(i=&gt;i.id!==id);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setProducts(updP);setIssues(newI);save(updP,undefined,newI);showToast("<span class="s1">ลบรายการเรียบร้อย</span>");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{fontWeight:700,color:"#1e3a5f",marginBottom:12}}&gt;{editId?"<span class="s6">✏️</span> <span class="s1">แก้ไขรายการเบิก</span>":"<span class="s6">📤</span> <span class="s1">บันทึกเบิกสินค้า</span>"}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{marginBottom:8}}&gt;&lt;Lbl&gt;<span class="s1">สินค้า</span>&lt;/Lbl&gt;&lt;select value={form.productId} onChange={e=&gt;setForm(f=&gt;({...f,productId:e.target.value}))} style={s()}&gt;&lt;option value=""&gt;-- <span class="s1">เลือกสินค้า</span> --&lt;/option&gt;{products.map(p=&gt;&lt;option key={p.id} value={p.id}&gt;{p.code} — {p.name} (<span class="s1">เหลือ</span> {p.qty} {p.unit})&lt;/option&gt;)}&lt;/select&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{[["qty","<span class="s1">จำนวนที่เบิก</span>","number"],["requester","<span class="s1">ผู้เบิก</span>","text"]].map(([k,l,t])=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div key={k} style={{marginBottom:8}}&gt;&lt;Lbl&gt;{l}&lt;/Lbl&gt;&lt;input type={t} value={form[k]} onChange={e=&gt;setForm(f=&gt;({...f,[k]:e.target.value}))} style={s()}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{marginBottom:8}}&gt;&lt;Lbl&gt;<span class="s1">แผนก</span>&lt;/Lbl&gt;&lt;select value={form.department} onChange={e=&gt;setForm(f=&gt;({...f,department:e.target.value}))} style={s()}&gt;&lt;option value=""&gt;-- <span class="s1">เลือกแผนก</span> --&lt;/option&gt;{DEPARTMENTS.map(d=&gt;&lt;option key={d}&gt;{d}&lt;/option&gt;)}&lt;/select&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div&gt;&lt;Lbl&gt;<span class="s1">วันที่เบิก</span>&lt;/Lbl&gt;&lt;input type="date" value={form.date} onChange={e=&gt;setForm(f=&gt;({...f,date:e.target.value}))} style={s()}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div&gt;&lt;Lbl&gt;<span class="s1">เวลาที่เบิก</span>&lt;/Lbl&gt;&lt;input type="time" value={form.time} onChange={e=&gt;setForm(f=&gt;({...f,time:e.target.value}))} style={s()}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{marginBottom:8}}&gt;&lt;Lbl&gt;<span class="s1">หมายเหตุ</span>&lt;/Lbl&gt;&lt;input value={form.note} onChange={e=&gt;setForm(f=&gt;({...f,note:e.target.value}))} style={s()}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{marginBottom:10}}&gt;&lt;AttachImages images={form.attachImages||[]} onChange={imgs=&gt;setForm(f=&gt;({...f,attachImages:imgs}))}/&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{display:"flex",gap:8}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button onClick={handleSubmit} style={b("#dd6b20","#fff",{flex:1})}&gt;<span class="s6">✅</span> {editId?"<span class="s1">บันทึกแก้ไข</span>":"<span class="s1">บันทึกเบิกสินค้า</span>"}&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{editId&amp;&amp;&lt;button onClick={resetForm} style={b("#718096","#fff")}&gt;<span class="s1">ยกเลิก</span>&lt;/button&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{fontWeight:700,color:"#1e3a5f",marginBottom:8}}&gt;<span class="s6">📋</span> <span class="s1">ประวัติเบิกสินค้า</span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{overflowY:"auto",maxHeight:520}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{issues.length===0?&lt;div style={{color:"#aaa",textAlign:"center",marginTop:40}}&gt;<span class="s1">ยังไม่มีรายการ</span>&lt;/div&gt;:</p>
+<p class="p1"><span class="Apple-converted-space">            </span>issues.slice(0,50).map(r=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div key={r.id} style={{borderBottom:"1px solid #e2e8f0",padding:"8px 0",fontSize:12}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{display:"flex",justifyContent:"space-between"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;span style={{fontWeight:600}}&gt;{r.productCode} — {r.productName}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;span style={{color:"#888",fontSize:11}}&gt;{r.date} {r.time||""}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{color:"#666"}}&gt;<span class="s1">จำนวน</span>: &lt;b style={{color:"#e53e3e"}}&gt;{fmt(r.qty)}&lt;/b&gt; | <span class="s1">แผนก</span>: {r.department||"-"}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{color:"#888"}}&gt;<span class="s1">ผู้เบิก</span>: {r.requester}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;ThumbRow images={r.attachImages||[]} onView={idx=&gt;setViewer({images:r.attachImages,idx})}/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div style={{display:"flex",gap:4,marginTop:5}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>{(r.attachImages||[]).length&gt;0&amp;&amp;&lt;button onClick={()=&gt;setViewIss(r)} style={b("#805ad5","#fff",{fontSize:10,padding:"2px 8px"})}&gt;<span class="s1">ดูไฟล์แนบ</span>&lt;/button&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;button onClick={()=&gt;handleEdit(r)} style={b("#3182ce","#fff",{fontSize:10,padding:"2px 8px"})}&gt;<span class="s1">แก้ไข</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;button onClick={()=&gt;handleDel(r.id)} style={b("#e53e3e","#fff",{fontSize:10,padding:"2px 8px"})}&gt;<span class="s1">ลบ</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{viewIss&amp;&amp;(</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;Modal title="<span class="s6">📎</span> <span class="s1">ไฟล์แนบการเบิก</span>" onClose={()=&gt;setViewIss(null)}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{fontSize:13,marginBottom:10}}&gt;&lt;b&gt;{viewIss.productCode} — {viewIss.productName}&lt;/b&gt;&lt;br/&gt;<span class="s1">ผู้เบิก</span>: {viewIss.requester} | <span class="s1">แผนก</span>: {viewIss.department||"-"}&lt;br/&gt;{viewIss.date} {viewIss.time||""}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div style={{display:"flex",gap:6,flexWrap:"wrap"}}&gt;{(viewIss.attachImages||[]).map((img,i)=&gt;&lt;img key={i} src={img} onClick={()=&gt;setViewer({images:viewIss.attachImages,idx:i})} style={{width:80,height:80,objectFit:"cover",borderRadius:7,border:"1px solid #e2e8f0",cursor:"pointer"}} alt={`v${i}`}/&gt;)}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/Modal&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{viewer&amp;&amp;&lt;ImageViewer images={viewer.images} startIdx={viewer.idx} onClose={()=&gt;setViewer(null)}/&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ===== REPORT TAB =====</p>
+<p class="p1">function ReportTab({products,receives,issues,movements}) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [rtype,setRtype]=useState("stock");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [df,setDf]=useState(""); const [dt,setDt]=useState("");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [viewer,setViewer]=useState(null);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const fD=arr=&gt;arr.filter(r=&gt;(!df||r.date&gt;=df)&amp;&amp;(!dt||r.date&lt;=dt));</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const fR=fD(receives),fI=fD(issues),fM=fD(movements);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const todaySpend=receives.filter(r=&gt;r.date===todayStr()).reduce((s,r)=&gt;s+(Number(r.price)||0)*(Number(r.qty)||0),0);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const periodSpend=fR.reduce((s,r)=&gt;s+(Number(r.price)||0)*(Number(r.qty)||0),0);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const exportCSV=(rows,headers,filename)=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const bom="\uFEFF";</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const csv=bom+[headers.join(","),...rows.map(r=&gt;headers.map(h=&gt;`"${(r[h]??'').toString().replace(/"/g,'""')}"`).join(","))].join("\n");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download=filename+".csv";a.click();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const doExport=()=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(rtype==="stock")exportCSV(products,["code","name","unit","qty","minQty","maxQty"],"stock");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(rtype==="receive")exportCSV(fR.map(r=&gt;({...r,attachImages:`${(r.attachImages||[]).length} <span class="s1">รูป</span>`})),["date","time","productCode","productName","qty","price","totalPrice","sourceType","sourceName","buyer","note","attachImages"],"receive");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(rtype==="issue")exportCSV(fI.map(i=&gt;({...i,attachImages:`${(i.attachImages||[]).length} <span class="s1">รูป</span>`})),["date","time","productCode","productName","qty","requester","department","note","attachImages"],"issue");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(rtype==="movement")exportCSV(fM,["date","time","type","productCode","productName","qty","by","dept"],"movement");</p>
+<p class="p1"><span class="Apple-converted-space">  </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap",alignItems:"center"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{[["stock","<span class="s6">📦</span> <span class="s1">สต็อก</span>"],["receive","<span class="s6">📥</span> <span class="s1">รับสินค้า</span>"],["issue","<span class="s6">📤</span> <span class="s1">เบิกสินค้า</span>"],["movement","<span class="s6">🔄</span> <span class="s1">การเคลื่อนไหว</span>"]].map(([v,l])=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;button key={v} onClick={()=&gt;setRtype(v)} style={b(rtype===v?"#1e3a5f":"#e2e8f0",rtype===v?"#fff":"#333",{fontSize:12})}&gt;{l}&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button onClick={doExport} style={b("#38a169","#fff",{marginLeft:"auto"})}&gt;<span class="s6">⬇️</span> Export CSV&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{rtype!=="stock"&amp;&amp;(</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{display:"flex",gap:8,marginBottom:12,alignItems:"center",flexWrap:"wrap",background:"#fff",padding:10,borderRadius:8}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;span style={{fontSize:12,color:"#666"}}&gt;<span class="s1">กรองวันที่</span>:&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;input type="date" value={df} onChange={e=&gt;setDf(e.target.value)} style={s({width:140})}/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;span&gt;—&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;input type="date" value={dt} onChange={e=&gt;setDt(e.target.value)} style={s({width:140})}/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;button onClick={()=&gt;{setDf("");setDt("");}} style={b("#718096","#fff",{fontSize:12,padding:"5px 10px"})}&gt;<span class="s1">ล้าง</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:12}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{[{l:"<span class="s1">ค่าใช้จ่ายวันนี้</span>",v:"฿"+fmt(todaySpend),c:"#805ad5"},{l:"<span class="s1">ค่าใช้จ่ายช่วงที่เลือก</span>",v:"฿"+fmt(periodSpend),c:"#3182ce"},{l:"<span class="s1">เบิกออกช่วงที่เลือก</span>",v:fmt(fI.reduce((s,i)=&gt;s+Number(i.qty||0),0))+" <span class="s1">ชิ้น</span>",c:"#dd6b20"}].map((c,i)=&gt;(</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div key={i} style={{background:"#fff",borderRadius:10,padding:14,textAlign:"center",boxShadow:"0 1px 4px rgba(0,0,0,.08)",borderTop:`3px solid ${c.c}`}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div style={{fontWeight:700,fontSize:16,color:c.c}}&gt;{c.v}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div style={{color:"#666",fontSize:12}}&gt;{c.l}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{overflowX:"auto"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{rtype==="stock"&amp;&amp;&lt;table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;thead&gt;&lt;tr style={{background:"#edf2f7"}}&gt;{["<span class="s1">รูป</span>","<span class="s1">รหัส</span>","<span class="s1">ชื่อ</span>","<span class="s1">คงเหลือ</span>","<span class="s1">หน่วย</span>","<span class="s1">ขั้นต่ำ</span>","<span class="s1">สถานะ</span>"].map(h=&gt;&lt;th key={h} style={{padding:"6px 8px",textAlign:"left"}}&gt;{h}&lt;/th&gt;)}&lt;/tr&gt;&lt;/thead&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;tbody&gt;{products.map(p=&gt;&lt;tr key={p.id} style={{borderBottom:"1px solid #e2e8f0",background:p.qty&lt;p.minQty?"#fff5f5":"#fff"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"4px 8px"}}&gt;{p.image?&lt;img src={p.image} style={{width:32,height:32,objectFit:"cover",borderRadius:4}} alt=""/&gt;:&lt;span&gt;<span class="s6">📦</span>&lt;/span&gt;}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px"}}&gt;{p.code}&lt;/td&gt;&lt;td style={{padding:"6px 8px"}}&gt;{p.name}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px",fontWeight:700,color:p.qty&lt;p.minQty?"#e53e3e":"#38a169"}}&gt;{fmt(p.qty)}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px"}}&gt;{p.unit}&lt;/td&gt;&lt;td style={{padding:"6px 8px"}}&gt;{fmt(p.minQty)}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px"}}&gt;&lt;span style={{background:p.qty&lt;p.minQty?"#fed7d7":"#c6f6d5",color:p.qty&lt;p.minQty?"#c53030":"#276749",borderRadius:10,padding:"2px 6px",fontSize:10}}&gt;{p.qty&lt;p.minQty?"<span class="s6">⚠️</span> <span class="s1">ต่ำ</span>":"<span class="s6">✅</span> <span class="s1">ปกติ</span>"}&lt;/span&gt;&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/tr&gt;)}&lt;/tbody&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/table&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{rtype==="receive"&amp;&amp;&lt;table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;thead&gt;&lt;tr style={{background:"#edf2f7"}}&gt;{["<span class="s1">วันที่</span>","<span class="s1">เวลา</span>","<span class="s1">รหัส</span>","<span class="s1">ชื่อ</span>","<span class="s1">จำนวน</span>","<span class="s1">ราคา</span>","<span class="s1">รวม</span>","<span class="s1">แหล่งที่ซื้อ</span>","<span class="s1">คนซื้อ</span>","<span class="s1">รูป</span>"].map(h=&gt;&lt;th key={h} style={{padding:"6px 8px",textAlign:"left",whiteSpace:"nowrap"}}&gt;{h}&lt;/th&gt;)}&lt;/tr&gt;&lt;/thead&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;tbody&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>{fR.map(r=&gt;&lt;tr key={r.id} style={{borderBottom:"1px solid #e2e8f0"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;td style={{padding:"6px 8px"}}&gt;{r.date}&lt;/td&gt;&lt;td style={{padding:"6px 8px"}}&gt;{r.time||"-"}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;td style={{padding:"6px 8px"}}&gt;{r.productCode}&lt;/td&gt;&lt;td style={{padding:"6px 8px"}}&gt;{r.productName}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;td style={{padding:"6px 8px",color:"#38a169",fontWeight:700}}&gt;+{fmt(r.qty)}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;td style={{padding:"6px 8px"}}&gt;฿{fmt(r.price)}&lt;/td&gt;&lt;td style={{padding:"6px 8px",fontWeight:700}}&gt;฿{fmt(r.totalPrice)}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;td style={{padding:"6px 8px"}}&gt;{r.sourceType} — {r.sourceName||"-"}&lt;/td&gt;&lt;td style={{padding:"6px 8px"}}&gt;{r.buyer}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;td style={{padding:"4px 8px"}}&gt;&lt;div style={{display:"flex",gap:3}}&gt;{(r.attachImages||[]).map((img,i)=&gt;&lt;img key={i} src={img} onClick={()=&gt;setViewer({images:r.attachImages,idx:i})} style={{width:28,height:28,objectFit:"cover",borderRadius:4,cursor:"pointer"}} alt=""/&gt;)}{!(r.attachImages||[]).length&amp;&amp;"-"}&lt;/div&gt;&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/tr&gt;)}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;tr style={{background:"#ebf8ff",fontWeight:700}}&gt;&lt;td colSpan={6} style={{padding:"6px 8px",textAlign:"right"}}&gt;<span class="s1">รวม</span>&lt;/td&gt;&lt;td style={{padding:"6px 8px",color:"#2b6cb0"}}&gt;฿{fmt(periodSpend)}&lt;/td&gt;&lt;td colSpan={3}&gt;&lt;/td&gt;&lt;/tr&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/tbody&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/table&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{rtype==="issue"&amp;&amp;&lt;table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;thead&gt;&lt;tr style={{background:"#edf2f7"}}&gt;{["<span class="s1">วันที่</span>","<span class="s1">เวลา</span>","<span class="s1">รหัส</span>","<span class="s1">ชื่อ</span>","<span class="s1">จำนวน</span>","<span class="s1">ผู้เบิก</span>","<span class="s1">แผนก</span>","<span class="s1">หมายเหตุ</span>","<span class="s1">รูป</span>"].map(h=&gt;&lt;th key={h} style={{padding:"6px 8px",textAlign:"left"}}&gt;{h}&lt;/th&gt;)}&lt;/tr&gt;&lt;/thead&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;tbody&gt;{fI.map(r=&gt;&lt;tr key={r.id} style={{borderBottom:"1px solid #e2e8f0"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px"}}&gt;{r.date}&lt;/td&gt;&lt;td style={{padding:"6px 8px"}}&gt;{r.time||"-"}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px"}}&gt;{r.productCode}&lt;/td&gt;&lt;td style={{padding:"6px 8px"}}&gt;{r.productName}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px",color:"#e53e3e",fontWeight:700}}&gt;-{fmt(r.qty)}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px"}}&gt;{r.requester}&lt;/td&gt;&lt;td style={{padding:"6px 8px"}}&gt;{r.department||"-"}&lt;/td&gt;&lt;td style={{padding:"6px 8px"}}&gt;{r.note||"-"}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"4px 8px"}}&gt;&lt;div style={{display:"flex",gap:3}}&gt;{(r.attachImages||[]).map((img,i)=&gt;&lt;img key={i} src={img} onClick={()=&gt;setViewer({images:r.attachImages,idx:i})} style={{width:28,height:28,objectFit:"cover",borderRadius:4,cursor:"pointer"}} alt=""/&gt;)}{!(r.attachImages||[]).length&amp;&amp;"-"}&lt;/div&gt;&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/tr&gt;)}&lt;/tbody&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/table&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{rtype==="movement"&amp;&amp;&lt;table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;thead&gt;&lt;tr style={{background:"#edf2f7"}}&gt;{["<span class="s1">วันที่</span>","<span class="s1">เวลา</span>","<span class="s1">ประเภท</span>","<span class="s1">รหัส</span>","<span class="s1">ชื่อ</span>","<span class="s1">จำนวน</span>","<span class="s1">โดย</span>","<span class="s1">แผนก</span>"].map(h=&gt;&lt;th key={h} style={{padding:"6px 8px",textAlign:"left"}}&gt;{h}&lt;/th&gt;)}&lt;/tr&gt;&lt;/thead&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;tbody&gt;{fM.map(m=&gt;&lt;tr key={m.id} style={{borderBottom:"1px solid #e2e8f0"}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px"}}&gt;{m.date}&lt;/td&gt;&lt;td style={{padding:"6px 8px"}}&gt;{m.time||"-"}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px"}}&gt;&lt;span style={{background:m.type==="<span class="s1">รับเข้า</span>"?"#c6f6d5":"#fed7d7",color:m.type==="<span class="s1">รับเข้า</span>"?"#276749":"#c53030",borderRadius:10,padding:"2px 6px",fontSize:10}}&gt;{m.type}&lt;/span&gt;&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px"}}&gt;{m.productCode}&lt;/td&gt;&lt;td style={{padding:"6px 8px"}}&gt;{m.productName}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px",fontWeight:700,color:m.qty&gt;0?"#38a169":"#e53e3e"}}&gt;{m.qty&gt;0?"+":""}{fmt(m.qty)}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;td style={{padding:"6px 8px"}}&gt;{m.by}&lt;/td&gt;&lt;td style={{padding:"6px 8px"}}&gt;{m.dept||"-"}&lt;/td&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/tr&gt;)}&lt;/tbody&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/table&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{((rtype==="receive"&amp;&amp;fR.length===0)||(rtype==="issue"&amp;&amp;fI.length===0)||(rtype==="movement"&amp;&amp;fM.length===0))&amp;&amp;&lt;div style={{textAlign:"center",color:"#aaa",padding:40}}&gt;<span class="s1">ยังไม่มีข้อมูล</span>&lt;/div&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/Card&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{viewer&amp;&amp;&lt;ImageViewer images={viewer.images} startIdx={viewer.idx} onClose={()=&gt;setViewer(null)}/&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">// ===== MODAL =====</p>
+<p class="p1">function Modal({title,children,onClose,wide}) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200}} onClick={onClose}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style={{background:"#fff",borderRadius:12,padding:24,maxWidth:wide?560:440,width:"95%",maxHeight:"88vh",overflowY:"auto"}} onClick={e=&gt;e.stopPropagation()}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style={{fontWeight:700,fontSize:15,color:"#1e3a5f",marginBottom:12}}&gt;{title}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{children}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button onClick={onClose} style={b("#1e3a5f","#fff",{width:"100%",marginTop:14})}&gt;<span class="s1">ปิด</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+</body>
+</html>
